@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f7f5" />
+    <title>Moneta — Personal finance</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <button class="brand" type="button" data-navigate="overview" aria-label="Go to overview">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>moneta</span>
+        </button>
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <button class="nav-link active" data-view="overview"><span class="nav-icon">◫</span>Overview</button>
+          <button class="nav-link" data-view="transactions"><span class="nav-icon">⇄</span>Transactions</button>
+          <button class="nav-link" data-view="recurring"><span class="nav-icon">◷</span>Recurring</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <label class="appearance-control">
+            <span class="appearance-label"><span aria-hidden="true">◐</span> Appearance</span>
+            <select id="theme-picker" aria-label="Choose appearance theme">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="ocean">Ocean</option>
+              <option value="lavender">Lavender</option>
+              <option value="sunset">Sunset</option>
+            </select>
+          </label>
+          <div class="privacy-card">
+            <span class="privacy-icon">◈</span>
+            <strong>Your money, your data.</strong>
+            <p>Everything stays on this device. No bank connections or account required.</p>
+          </div>
+          <div class="profile">
+            <div class="avatar">A</div>
+            <div><strong>My finances</strong><span>Personal space</span></div>
+            <span class="profile-more">···</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="mobile-menu" id="menu-button" aria-label="Open menu">☰</button>
+          <div class="breadcrumb"><span>My finances</span><span class="crumb-slash">/</span><strong id="current-page">Overview</strong></div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="export-button" title="Export your data" aria-label="Export your data">⇩</button>
+            <button class="button button-dark top-add" id="top-add-button"><span>＋</span> Add transaction</button>
+          </div>
+        </header>
+
+        <section class="view active-view" id="overview-view">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow" id="today-label">YOUR MONEY, IN ONE PLACE</p>
+              <h1><span id="greeting">Good morning</span><span class="heading-period">.</span></h1>
+              <p class="heading-subtitle">A little clarity goes a long way.</p>
+            </div>
+            <div class="heading-controls">
+              <label class="month-picker">
+                <span class="sr-only">Choose month</span>
+                <span class="calendar-icon">▦</span>
+                <input id="month-picker" type="month" />
+                <span class="chevron">⌄</span>
+              </label>
+              <label class="currency-picker">
+                <span class="sr-only">Currency</span>
+                <select id="currency-picker" aria-label="Currency">
+                  <option value="USD">USD $</option><option value="MYR">MYR RM</option><option value="SGD">SGD $</option>
+                  <option value="EUR">EUR €</option><option value="GBP">GBP £</option><option value="AUD">AUD $</option>
+                  <option value="CAD">CAD $</option><option value="IDR">IDR Rp</option><option value="INR">INR ₹</option><option value="JPY">JPY ¥</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="summary-grid">
+            <article class="summary-card spending-card">
+              <div class="card-topline"><span class="card-label">Total spent</span><span class="trend-icon">↗</span></div>
+              <div class="summary-value" id="total-spent">$0.00</div>
+              <div class="summary-footer"><span class="summary-dot coral-dot"></span><span id="spending-period">This month</span><span class="muted" id="transaction-count">0 transactions</span></div>
+              <div class="card-sparkline sparkline-coral" aria-hidden="true"><svg viewBox="0 0 220 50" preserveAspectRatio="none"><path d="M0 37 C15 30 23 37 37 28 S60 35 73 22 S95 33 110 20 S132 28 146 16 S164 25 180 13 S200 18 220 4" /></svg></div>
+            </article>
+            <article class="summary-card income-card">
+              <div class="card-topline"><span class="card-label">Income</span><span class="trend-icon income-trend">↗</span></div>
+              <div class="summary-value" id="total-income">$0.00</div>
+              <div class="summary-footer"><span class="summary-dot green-dot"></span><span id="income-period">This month</span><span class="muted">Money in</span></div>
+              <div class="card-sparkline sparkline-green" aria-hidden="true"><svg viewBox="0 0 220 50" preserveAspectRatio="none"><path d="M0 41 C20 33 24 39 40 27 S59 31 76 25 S95 29 111 18 S130 24 145 15 S165 20 180 11 S203 15 220 4" /></svg></div>
+            </article>
+            <article class="summary-card balance-card">
+              <div class="card-topline"><span class="card-label">Net balance</span><span class="balance-symbol">↗</span></div>
+              <div class="summary-value" id="net-balance">$0.00</div>
+              <div class="summary-footer"><span class="summary-dot blue-dot"></span><span>Income minus spending</span></div>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel spending-panel">
+              <div class="panel-heading">
+                <div><h2>Spending breakdown</h2><p id="breakdown-period">Where your money went this month</p></div>
+                <button class="text-button" data-navigate="transactions">View all <span>↗</span></button>
+              </div>
+              <div class="breakdown-content" id="breakdown-content"></div>
+            </section>
+            <section class="panel recurring-preview-panel">
+              <div class="panel-heading">
+                <div><h2>Coming up</h2><p>Your next recurring payments</p></div>
+                <button class="text-button" data-navigate="recurring">See all <span>↗</span></button>
+              </div>
+              <div class="upcoming-list" id="upcoming-list"></div>
+              <button class="add-recurring-link" id="add-recurring-link"><span>＋</span> Add a recurring payment</button>
+            </section>
+          </div>
+
+          <section class="panel transactions-panel">
+            <div class="panel-heading">
+              <div><h2>Recent transactions</h2><p>Your latest money moves</p></div>
+              <button class="text-button" data-navigate="transactions">All transactions <span>↗</span></button>
+            </div>
+            <div class="transaction-table-wrap">
+              <table class="transaction-table">
+                <thead><tr><th>TRANSACTION</th><th>CATEGORY</th><th>PAYMENT METHOD</th><th>DATE</th><th>RECEIPT</th><th class="amount-column">AMOUNT</th><th></th></tr></thead>
+                <tbody id="recent-transactions"></tbody>
+              </table>
+            </div>
+          </section>
+          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Saved on this device</span></footer>
+        </section>
+
+        <section class="view" id="transactions-view">
+          <div class="page-heading transactions-heading">
+            <div><p class="eyebrow">YOUR MONEY, IN ONE PLACE</p><h1>Transactions<span class="heading-period">.</span></h1><p class="heading-subtitle">Every purchase, payment, and paycheck.</p></div>
+            <button class="button button-dark" id="transaction-add-button"><span>＋</span> Add transaction</button>
+          </div>
+          <section class="panel all-transactions-panel">
+            <div class="filter-row">
+              <label class="search-box"><span>⌕</span><input id="transaction-search" type="search" placeholder="Search transactions..." /></label>
+              <select id="type-filter" aria-label="Filter by transaction type"><option value="all">All types</option><option value="expense">Expenses</option><option value="bill">Bills</option><option value="subscription">Subscriptions</option><option value="income">Income</option></select>
+              <select id="category-filter" aria-label="Filter by category"><option value="all">All categories</option></select>
+              <label class="month-filter"><span>▦</span><input id="transaction-month" type="month" aria-label="Filter by month" /></label>
+            </div>
+            <div class="transaction-table-wrap">
+              <table class="transaction-table">
+                <thead><tr><th>TRANSACTION</th><th>CATEGORY</th><th>PAYMENT METHOD</th><th>DATE</th><th>RECEIPT</th><th class="amount-column">AMOUNT</th><th></th></tr></thead>
+                <tbody id="all-transactions"></tbody>
+              </table>
+            </div>
+            <div class="list-footer" id="transaction-list-footer"></div>
+          </section>
+          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Saved on this device</span></footer>
+        </section>
+
+        <section class="view" id="recurring-view">
+          <div class="page-heading transactions-heading">
+            <div><p class="eyebrow">STAY A STEP AHEAD</p><h1>Recurring<span class="heading-period">.</span></h1><p class="heading-subtitle">Bills and subscriptions, without the surprises.</p></div>
+            <button class="button button-dark" id="recurring-add-button"><span>＋</span> Add recurring</button>
+          </div>
+          <div class="recurring-summary" id="recurring-summary"></div>
+          <section class="panel recurring-full-panel">
+            <div class="panel-heading"><div><h2>Your recurring payments</h2><p>Mark a payment as paid to add it to your transactions.</p></div></div>
+            <div id="recurring-list" class="recurring-full-list"></div>
+          </section>
+          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Saved on this device</span></footer>
+        </section>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog class="modal" id="transaction-modal">
+      <form id="transaction-form" method="dialog">
+        <div class="modal-heading"><div><p class="eyebrow">MONEY IN, MONEY OUT</p><h2>Add transaction</h2></div><button type="button" class="modal-close" data-close="transaction-modal" aria-label="Close dialog">×</button></div>
+        <div class="form-grid">
+          <label class="form-field full-field"><span>Description</span><input name="name" required maxlength="70" placeholder="e.g. Weekly groceries" /></label>
+          <label class="form-field"><span>Amount</span><div class="amount-input"><span id="transaction-currency-prefix">USD</span><input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" /></div></label>
+          <label class="form-field"><span>Type</span><select name="type" id="transaction-type"><option value="expense">Expense</option><option value="bill">Bill payment</option><option value="subscription">Subscription</option><option value="income">Income</option></select></label>
+          <label class="form-field"><span>Category</span><select name="category" id="transaction-category" required></select></label>
+          <label class="form-field"><span>Payment method</span><select name="paymentMethod" id="transaction-payment-method"></select></label>
+          <label class="form-field"><span>Date</span><input name="date" type="date" required /></label>
+          <div class="form-field full-field"><span>Receipt <em>optional · image or PDF, up to 10 MB</em></span>
+            <label class="receipt-picker" for="transaction-receipt"><span class="receipt-picker-icon">↥</span><span class="receipt-picker-copy"><strong>Choose a receipt</strong><span>JPG, PNG, WebP, HEIC, or PDF</span></span><input id="transaction-receipt" name="receipt" type="file" accept="image/*,.pdf,application/pdf" /></label>
+            <div class="receipt-selection" id="receipt-selection" hidden><span class="receipt-selection-name" id="receipt-selection-name"></span><button type="button" class="receipt-remove" id="receipt-remove">Remove</button></div>
+          </div>
+          <label class="form-field full-field"><span>Note <em>optional</em></span><input name="note" maxlength="160" placeholder="Add a little context..." /></label>
+        </div>
+        <div class="modal-error" id="transaction-error" role="alert"></div>
+        <div class="modal-actions"><button type="button" class="button button-light" data-close="transaction-modal">Cancel</button><button type="submit" class="button button-dark" id="transaction-submit">Save transaction</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="recurring-modal">
+      <form id="recurring-form" method="dialog">
+        <div class="modal-heading"><div><p class="eyebrow">PLAN AHEAD</p><h2>Add recurring payment</h2></div><button type="button" class="modal-close" data-close="recurring-modal" aria-label="Close dialog">×</button></div>
+        <div class="form-grid">
+          <label class="form-field full-field"><span>Name</span><input name="name" required maxlength="70" placeholder="e.g. Internet, Spotify" /></label>
+          <label class="form-field"><span>Amount</span><div class="amount-input"><span id="recurring-currency-prefix">USD</span><input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" /></div></label>
+          <label class="form-field"><span>Payment type</span><select name="type" id="recurring-type"><option value="subscription">Subscription</option><option value="bill">Bill</option></select></label>
+          <label class="form-field"><span>Category</span><select name="category" id="recurring-category" required></select></label>
+          <label class="form-field"><span>Payment method</span><select name="paymentMethod" id="recurring-payment-method"></select></label>
+          <label class="form-field"><span>Next due date</span><input name="nextDue" type="date" required /></label>
+          <label class="form-field"><span>Repeats</span><select name="frequency"><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="quarterly">Every 3 months</option><option value="yearly">Yearly</option></select></label>
+        </div>
+        <div class="modal-error" id="recurring-error" role="alert"></div>
+        <div class="modal-actions"><button type="button" class="button button-light" data-close="recurring-modal">Cancel</button><button type="submit" class="button button-dark">Save recurring</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="delete-modal">
+      <form id="delete-form" method="dialog">
+        <div class="modal-heading"><div><p class="eyebrow">A QUICK CHECK</p><h2>Delete this transaction?</h2></div><button type="button" class="modal-close" data-close="delete-modal" aria-label="Close dialog">×</button></div>
+        <p class="confirm-copy">This can’t be undone. Your other financial records will stay right where they are.</p>
+        <div class="modal-actions"><button type="button" class="button button-light" data-close="delete-modal">Keep it</button><button type="submit" class="button button-danger">Delete transaction</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal receipt-modal" id="receipt-modal">
+      <div class="modal-heading"><div><p class="eyebrow">TRANSACTION RECEIPT</p><h2 id="receipt-title">Receipt</h2></div><button type="button" class="modal-close" data-close="receipt-modal" aria-label="Close dialog">×</button></div>
+      <div class="receipt-preview" id="receipt-preview"></div>
+      <div class="modal-actions"><button type="button" class="button button-danger receipt-delete-button" id="receipt-delete">Remove receipt</button><a class="button button-light" id="receipt-download" download>Download receipt</a><button type="button" class="button button-dark" data-close="receipt-modal">Done</button></div>
+    </dialog>
+  </body>
+</html>
