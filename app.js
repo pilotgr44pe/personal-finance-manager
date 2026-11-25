@@ -399,6 +399,8 @@ async function activateUser(user) {
     applyTheme(DEFAULT_STATE.theme);
     if ($("#migration-modal").open) $("#migration-modal").close();
     releaseReceiptPreview();
+    $("#auth-form").reset();
+    setAuthMode("signin");
     showAuthScreen();
     return;
   }
