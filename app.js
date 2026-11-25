@@ -981,11 +981,17 @@ async function exportData() {
   showToast("Your finance data was exported.");
 }
 
+function setSidebarOpen(isOpen) {
+  $("#sidebar").classList.toggle("open", isOpen);
+  $("#menu-button").setAttribute("aria-expanded", String(isOpen));
+  $("#menu-button").setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+}
+
 function navigate(view) {
   $$(".view").forEach((section) => section.classList.toggle("active-view", section.id === `${view}-view`));
   $$(".nav-link").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
   $("#current-page").textContent = view === "overview" ? "Overview" : view === "transactions" ? "Transactions" : "Recurring";
-  $("#sidebar").classList.remove("open");
+  setSidebarOpen(false);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1179,7 +1185,9 @@ function bindEvents() {
       $("#migration-error").textContent = error.message || "Could not save this choice.";
     }
   });
-  $("#menu-button").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  $("#menu-button").addEventListener("click", () => {
+    setSidebarOpen(!$("#sidebar").classList.contains("open"));
+  });
   $$(".nav-link").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.view)));
   $$("[data-navigate]").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.navigate)));
   $$("[data-close]").forEach((button) => button.addEventListener("click", () => $(`#${button.dataset.close}`).close()));
@@ -1257,8 +1265,17 @@ function bindEvents() {
       });
     }
   });
-  $("#sidebar").addEventListener("click", (event) => {
-    if (event.target === $("#sidebar") && window.innerWidth <= 800) $("#sidebar").classList.remove("open");
+  document.addEventListener("click", (event) => {
+    const sidebar = $("#sidebar");
+    const menuButton = $("#menu-button");
+    if (
+      window.innerWidth <= 800 &&
+      sidebar.classList.contains("open") &&
+      !sidebar.contains(event.target) &&
+      !menuButton.contains(event.target)
+    ) {
+      setSidebarOpen(false);
+    }
   });
 }
 
