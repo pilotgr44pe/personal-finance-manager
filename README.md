@@ -4,6 +4,7 @@ Moneta is a personal finance manager for tracking purchases, bills, subscription
 
 ## Features
 
+- Public landing page introducing Moneta, with direct sign-in and account creation links.
 - Email and password sign-up, sign-in, email confirmation, and password reset.
 - Private per-account transactions, recurring payments, currency, and theme preferences.
 - Private image and PDF receipt uploads (up to 10 MB per file).
@@ -22,7 +23,7 @@ Moneta is a personal finance manager for tracking purchases, bills, subscription
    - `SUPABASE_ANON_KEY` — the project’s publishable/anon key.
 
    The `/api/config` endpoint returns only those public client settings. **Never add a Supabase service-role key, database password, or other secret to the frontend or these variables.** Database and receipt access is restricted by the included row-level security and storage policies.
-6. Open the deployed site, create an account, and confirm the email address. If the previous local Moneta data is available in that browser origin, the app offers a one-time import. Otherwise, sign in and use **Import a Moneta backup** to restore a JSON backup.
+6. Open the deployed site and choose **Get started** to create an account, then confirm the email address. If the previous local Moneta data is available in that browser origin, the app offers a one-time import. Otherwise, sign in and use **Import a Moneta backup** to restore a JSON backup.
 
 The app is not ready for real accounts until the SQL migration, Supabase Auth URL settings, and Vercel environment variables are configured.
 

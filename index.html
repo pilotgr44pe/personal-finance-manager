@@ -10,7 +10,64 @@
     <script src="app.js" defer></script>
   </head>
   <body>
-    <section class="auth-screen" id="auth-screen">
+    <section class="landing-screen" id="landing-screen">
+      <header class="landing-header">
+        <a class="landing-brand" href="#" aria-label="Moneta home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>moneta</span>
+        </a>
+        <button class="landing-signin" type="button" data-auth-mode="signin">Sign in</button>
+      </header>
+      <main>
+        <section class="landing-hero">
+          <div class="landing-copy">
+            <p class="eyebrow">A CALMER WAY TO MANAGE MONEY</p>
+            <h1>Your finances,<br />all in one place.</h1>
+            <p class="landing-description">See where your money goes, stay ahead of recurring bills, and make your next decision with confidence.</p>
+            <div class="landing-actions">
+              <button class="button button-dark landing-primary" type="button" data-auth-mode="signup">Get started <span aria-hidden="true">→</span></button>
+              <button class="landing-secondary" type="button" data-auth-mode="signin">I already have an account</button>
+            </div>
+            <p class="landing-assurance"><span aria-hidden="true">◈</span> Private to your account. Always in your control.</p>
+          </div>
+          <div class="landing-preview" aria-label="Illustrative monthly finance overview">
+            <div class="preview-topline"><span>MONTHLY OVERVIEW</span><span class="preview-period">THIS MONTH⌄</span></div>
+            <div class="preview-total-label">Total spent</div>
+            <div class="preview-total">$2,480<span>.50</span></div>
+            <div class="preview-change"><span>↘</span> A clearer view of your spending</div>
+            <div class="preview-chart" aria-hidden="true">
+              <div class="preview-chart-grid"><i></i><i></i><i></i><i></i></div>
+              <div class="preview-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            </div>
+            <div class="preview-chart-labels"><span>WEEK 1</span><span>WEEK 2</span><span>WEEK 3</span><span>WEEK 4</span></div>
+            <div class="preview-bottom">
+              <div><span class="preview-dot"></span><span>Everyday spending</span></div>
+              <strong>View your breakdown <span aria-hidden="true">→</span></strong>
+            </div>
+          </div>
+        </section>
+        <section class="landing-features" aria-label="Moneta features">
+          <article class="landing-feature">
+            <span class="feature-icon">↗</span>
+            <h2>Know where it goes</h2>
+            <p>Bring purchases, bills, and income together for a clear monthly picture.</p>
+          </article>
+          <article class="landing-feature">
+            <span class="feature-icon">◷</span>
+            <h2>Stay a step ahead</h2>
+            <p>Keep recurring payments and upcoming due dates easy to find.</p>
+          </article>
+          <article class="landing-feature">
+            <span class="feature-icon">◈</span>
+            <h2>Make it yours</h2>
+            <p>Choose your currency and appearance, with your data kept private to your account.</p>
+          </article>
+        </section>
+      </main>
+      <footer class="landing-footer"><span>moneta</span><span>Your money, your data.</span></footer>
+    </section>
+
+    <section class="auth-screen" id="auth-screen" hidden>
       <div class="auth-card">
         <div class="auth-brand" aria-label="Moneta">
           <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>

@@ -330,11 +330,20 @@ function setAuthMode(mode) {
   setAuthNotice("");
 }
 
-function showAuthScreen() {
+function showAuthScreen(mode = "signin") {
+  $("#landing-screen").hidden = true;
   $("#app-shell").hidden = true;
   $("#auth-screen").hidden = false;
   $("#app-error").hidden = true;
+  setAuthMode(mode);
   $("#auth-email").focus();
+}
+
+function showLandingScreen() {
+  $("#landing-screen").hidden = false;
+  $("#auth-screen").hidden = true;
+  $("#app-shell").hidden = true;
+  $("#app-error").hidden = true;
 }
 
 async function fetchAllRows(table, orderColumn, ascending) {
@@ -381,6 +390,7 @@ async function loadAccount(user, generation) {
   $("#currency-picker").value = state.currency;
   $("#theme-picker").value = state.theme;
   applyTheme(state.theme);
+  $("#landing-screen").hidden = true;
   $("#auth-screen").hidden = true;
   $("#app-shell").hidden = false;
   $("#app-error").hidden = true;
@@ -401,7 +411,7 @@ async function activateUser(user) {
     releaseReceiptPreview();
     $("#auth-form").reset();
     setAuthMode("signin");
-    showAuthScreen();
+    showLandingScreen();
     return;
   }
   if (activeUserId === user.id || loadingUserId === user.id) return;
@@ -419,6 +429,7 @@ async function activateUser(user) {
   } catch (error) {
     if (generation !== authGeneration) return;
     console.error("Could not load account data.", error);
+    $("#landing-screen").hidden = true;
     $("#auth-screen").hidden = true;
     $("#app-shell").hidden = false;
     $("#app-error-message").textContent = error.message || "Check your Supabase schema and connection, then try again.";
@@ -447,8 +458,7 @@ async function initializeAuth() {
       if (event === "PASSWORD_RECOVERY") {
         window.setTimeout(() => {
           $("#auth-email").value = session?.user?.email || "";
-          showAuthScreen();
-          setAuthMode("reset");
+          showAuthScreen("reset");
         }, 0);
         return;
       }
@@ -1092,6 +1102,9 @@ function bindEvents() {
       console.error("Could not import Moneta backup.", error);
       showToast(error.message || "Could not import this backup.");
     });
+  });
+  $$("[data-auth-mode]").forEach((button) => {
+    button.addEventListener("click", () => showAuthScreen(button.dataset.authMode));
   });
   $("#auth-switch").addEventListener("click", () => setAuthMode(authMode === "signin" ? "signup" : "signin"));
   $("#auth-form").addEventListener("submit", async (event) => {
