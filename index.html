@@ -6,10 +6,33 @@
     <meta name="theme-color" content="#f6f7f5" />
     <title>Moneta — Personal finance</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js" integrity="sha384-7i/4BYWz4Mn+lJfg2HWfEPfZQ7tmFKF3CTSKlXBpxWjNlLjcg+T6smpHG4gLmU1u" crossorigin="anonymous" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
-    <div class="app-shell">
+    <section class="auth-screen" id="auth-screen">
+      <div class="auth-card">
+        <div class="auth-brand" aria-label="Moneta">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>moneta</span>
+        </div>
+        <p class="eyebrow">YOUR MONEY, IN ONE PLACE</p>
+        <h1 id="auth-heading">Welcome back.</h1>
+        <p class="heading-subtitle" id="auth-subheading">Sign in to securely access your finances.</p>
+        <form id="auth-form">
+          <label class="form-field"><span>Email</span><input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" /></label>
+          <label class="form-field" id="auth-password-field"><span>Password</span><input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="8" /></label>
+          <button class="auth-forgot" id="auth-forgot" type="button">Forgot password?</button>
+          <p class="auth-notice" id="auth-notice" role="status" aria-live="polite"></p>
+          <button class="button button-dark auth-submit" id="auth-submit" type="submit">Sign in</button>
+        </form>
+        <button class="auth-switch" id="auth-switch" type="button">New to Moneta? Create an account</button>
+        <p class="auth-config" id="auth-config" role="alert" hidden>Authentication is not configured. Set <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in Vercel, then redeploy.</p>
+      </div>
+      <p class="auth-footer">Your financial data is private to your account.</p>
+    </section>
+
+    <div class="app-shell" id="app-shell" hidden>
       <aside class="sidebar" id="sidebar">
         <button class="brand" type="button" data-navigate="overview" aria-label="Go to overview">
           <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -35,12 +58,12 @@
           <div class="privacy-card">
             <span class="privacy-icon">◈</span>
             <strong>Your money, your data.</strong>
-            <p>Everything stays on this device. No bank connections or account required.</p>
+            <p>Your records are private to your account and securely synced.</p>
           </div>
           <div class="profile">
             <div class="avatar">A</div>
-            <div><strong>My finances</strong><span>Personal space</span></div>
-            <span class="profile-more">···</span>
+            <div class="profile-identity"><strong id="profile-email">My finances</strong><span>Personal space</span></div>
+            <button class="profile-more signout-button" id="signout-button" type="button" aria-label="Sign out" title="Sign out">↪</button>
           </div>
         </div>
       </aside>
@@ -50,8 +73,10 @@
           <button class="mobile-menu" id="menu-button" aria-label="Open menu">☰</button>
           <div class="breadcrumb"><span>My finances</span><span class="crumb-slash">/</span><strong id="current-page">Overview</strong></div>
           <div class="topbar-actions">
+            <button class="icon-button" id="import-button" title="Import a Moneta backup" aria-label="Import a Moneta backup">⇧</button>
             <button class="icon-button" id="export-button" title="Export your data" aria-label="Export your data">⇩</button>
             <button class="button button-dark top-add" id="top-add-button"><span>＋</span> Add transaction</button>
+            <input id="backup-import-file" type="file" accept="application/json,.json" hidden />
           </div>
         </header>
 
@@ -130,7 +155,7 @@
               </table>
             </div>
           </section>
-          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Saved on this device</span></footer>
+          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Synced to your account</span></footer>
         </section>
 
         <section class="view" id="transactions-view">
@@ -153,7 +178,7 @@
             </div>
             <div class="list-footer" id="transaction-list-footer"></div>
           </section>
-          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Saved on this device</span></footer>
+          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Synced to your account</span></footer>
         </section>
 
         <section class="view" id="recurring-view">
@@ -166,11 +191,25 @@
             <div class="panel-heading"><div><h2>Your recurring payments</h2><p>Mark a payment as paid to add it to your transactions.</p></div></div>
             <div id="recurring-list" class="recurring-full-list"></div>
           </section>
-          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Saved on this device</span></footer>
+          <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Synced to your account</span></footer>
         </section>
       </main>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog class="modal" id="migration-modal">
+      <form method="dialog" id="migration-form">
+        <div class="modal-heading"><div><p class="eyebrow">YOUR EXISTING MONETA DATA</p><h2>Import this browser’s data?</h2></div></div>
+        <p class="confirm-copy">We found transactions or recurring payments saved by the previous local version. Import a copy into this account? Your local data will not be changed.</p>
+        <p class="migration-note">Receipt files can be imported when they’re available in this browser. You can also import a JSON backup later.</p>
+        <div class="modal-error" id="migration-error" role="alert"></div>
+        <div class="modal-actions"><button type="button" class="button button-light" id="migration-skip">Not now</button><button type="submit" class="button button-dark" id="migration-submit">Import data</button></div>
+      </form>
+    </dialog>
+    <div class="app-error" id="app-error" role="alert" hidden>
+      <strong>Couldn’t load your account data.</strong>
+      <span id="app-error-message"></span>
+      <div><button class="button button-dark" id="retry-load" type="button">Try again</button><button class="button button-light" id="error-signout" type="button">Sign out</button></div>
+    </div>
 
     <dialog class="modal" id="transaction-modal">
       <form id="transaction-form" method="dialog">
@@ -183,7 +222,7 @@
           <label class="form-field"><span>Payment method</span><select name="paymentMethod" id="transaction-payment-method"></select></label>
           <label class="form-field"><span>Date</span><input name="date" type="date" required /></label>
           <div class="form-field full-field"><span>Receipt <em>optional · image or PDF, up to 10 MB</em></span>
-            <label class="receipt-picker" for="transaction-receipt"><span class="receipt-picker-icon">↥</span><span class="receipt-picker-copy"><strong>Choose a receipt</strong><span>JPG, PNG, WebP, HEIC, or PDF</span></span><input id="transaction-receipt" name="receipt" type="file" accept="image/*,.pdf,application/pdf" /></label>
+            <label class="receipt-picker" for="transaction-receipt"><span class="receipt-picker-icon">↥</span><span class="receipt-picker-copy"><strong>Choose a receipt</strong><span>JPG, PNG, WebP, HEIC, or PDF</span></span><input id="transaction-receipt" name="receipt" type="file" accept="image/avif,image/bmp,image/gif,image/heic,image/heif,image/jpeg,image/png,image/tiff,image/webp,.pdf,application/pdf" /></label>
             <div class="receipt-selection" id="receipt-selection" hidden><span class="receipt-selection-name" id="receipt-selection-name"></span><button type="button" class="receipt-remove" id="receipt-remove">Remove</button></div>
           </div>
           <label class="form-field full-field"><span>Note <em>optional</em></span><input name="note" maxlength="160" placeholder="Add a little context..." /></label>
