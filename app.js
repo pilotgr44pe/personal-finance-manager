@@ -396,6 +396,7 @@ async function activateUser(user) {
     loadingUserId = null;
     legacyImportCompleted = false;
     state = { ...DEFAULT_STATE, transactions: [], recurring: [] };
+    applyTheme(DEFAULT_STATE.theme);
     if ($("#migration-modal").open) $("#migration-modal").close();
     releaseReceiptPreview();
     showAuthScreen();
