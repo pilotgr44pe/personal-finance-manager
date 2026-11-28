@@ -256,6 +256,33 @@ tr:hover .delete-row, .delete-row:focus-visible { opacity: 1; }
 .paid-button:hover { background: #eaf4ed; }
 .recurring-delete { background: none; border: 0; color: #a8aea7; font-size: 16px; }
 .recurring-empty { padding: 50px 20px; text-align: center; color: #929a91; font-size: 10px; line-height: 1.6; }
+.asset-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-bottom: 17px; }
+.asset-stat { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 17px 19px; border: 1px solid #ebede9; border-radius: 9px; background: #fff; }
+.asset-stat > div { min-width: 0; }
+.asset-stat > div > span { display: block; color: #8f968e; font-size: 9px; }
+.asset-stat strong { display: block; overflow: hidden; margin-top: 3px; font: 700 17px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -.3px; text-overflow: ellipsis; }
+.asset-stat-icon, .asset-row-icon { display: grid; flex: 0 0 auto; place-items: center; width: 36px; height: 36px; border-radius: 9px; color: #488268; background: #edf5ef; font-size: 17px; }
+.asset-stat-icon.investment-icon, .asset-row-icon.investment-icon { color: #6684b1; background: #eff3fa; }
+.asset-stat-icon.savings-icon, .asset-row-icon.savings-icon { color: #488268; background: #edf5ef; }
+.asset-panel { padding: 19px 20px 4px; }
+.asset-panel .panel-heading { margin-bottom: 10px; }
+.asset-row { display: grid; grid-template-columns: 38px minmax(150px, 1fr) 90px minmax(100px, auto) auto; align-items: center; gap: 13px; padding: 14px 0; border-top: 1px solid #eff0ed; }
+.asset-row-name { min-width: 0; }
+.asset-row-name strong, .asset-row-name span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.asset-row-name strong { color: #3e443d; font-size: 10px; }
+.asset-row-name span { margin-top: 4px; color: #9ca29a; font-size: 8px; }
+.asset-kind-label { width: fit-content; padding: 5px 8px; border-radius: 20px; background: #edf5ef; color: #488268; font-size: 8px; }
+.asset-kind-label.investment { background: #eff3fa; color: #6684b1; }
+.asset-row-amount { color: #353a34; font-size: 11px; text-align: right; white-space: nowrap; }
+.asset-row-actions { display: flex; align-items: center; gap: 6px; }
+.asset-row-actions button { min-width: 27px; padding: 5px; border: 0; border-radius: 5px; background: transparent; color: #848c83; font-size: 9px; }
+.asset-row-actions button:hover { background: #f3f5f2; color: #347259; }
+.asset-row-actions button:last-child:hover { color: #b8514b; }
+.asset-empty { display: grid; justify-items: center; gap: 9px; padding: 46px 18px; color: #929a91; text-align: center; }
+.asset-empty-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #edf5ef; color: #488268; font-size: 20px; }
+.asset-empty strong { color: #50584f; font-size: 12px; }
+.asset-empty > span:not(.asset-empty-icon) { max-width: 300px; font-size: 10px; line-height: 1.6; }
+.asset-empty .button { margin-top: 5px; }
 .modal { width: min(460px, calc(100vw - 28px)); padding: 24px; border: 0; border-radius: 11px; background: var(--theme-surface, white); color: var(--theme-ink, #20231f); box-shadow: 0 20px 80px #1c261c30; }
 .receipt-modal { width: min(760px, calc(100vw - 28px)); }
 .receipt-preview { display: grid; place-items: center; min-height: 160px; max-height: min(65vh, 640px); overflow: auto; border: 1px solid #eceeea; border-radius: 7px; background: #f6f7f5; }
@@ -404,6 +431,7 @@ html[data-theme="sunset"] {
 html[data-theme] body { background: var(--theme-page); color: var(--theme-ink); transition: background-color .2s, color .2s; }
 html[data-theme] .sidebar,
 html[data-theme] .summary-card,
+html[data-theme] .asset-stat,
 html[data-theme] .panel,
 html[data-theme] .month-picker,
 html[data-theme] .currency-picker,
@@ -480,6 +508,21 @@ html[data-theme] .avatar { color: var(--theme-accent); background: var(--theme-a
 html[data-theme] .privacy-icon,
 html[data-theme] .recurring-stat-icon { color: var(--theme-accent); }
 html[data-theme] .recurring-stat-icon { background: var(--theme-accent-soft); }
+html[data-theme] .asset-stat { border-color: var(--theme-border); }
+html[data-theme] .asset-stat > div > span,
+html[data-theme] .asset-row-name span { color: var(--theme-muted); }
+html[data-theme] .asset-stat strong,
+html[data-theme] .asset-row-name strong,
+html[data-theme] .asset-row-amount,
+html[data-theme] .asset-empty strong { color: var(--theme-ink); }
+html[data-theme] .asset-panel { border-color: var(--theme-border); }
+html[data-theme] .asset-row-actions button { color: var(--theme-text); }
+html[data-theme] .asset-row-actions button:hover { background: var(--theme-soft-raised); color: var(--theme-accent); }
+html[data-theme] .asset-empty { color: var(--theme-muted); }
+html[data-theme] .asset-empty-icon,
+html[data-theme] .asset-stat-icon.savings-icon,
+html[data-theme] .asset-row-icon.savings-icon,
+html[data-theme] .asset-kind-label { background: var(--theme-accent-soft); color: var(--theme-accent); }
 html[data-theme] .button-dark { background: var(--theme-accent-strong); }
 html[data-theme] .button-dark:hover { filter: brightness(1.12); }
 html[data-theme] .button-light,
@@ -499,6 +542,7 @@ html[data-theme] .appearance-control select { border-color: var(--theme-border);
 html[data-theme] .transaction-table th,
 html[data-theme] .transaction-table td,
 html[data-theme] .recurring-full-row,
+html[data-theme] .asset-row,
 html[data-theme] .list-footer,
 html[data-theme] .upcoming-item,
 html[data-theme] .profile { border-color: var(--theme-border-soft); }
@@ -555,3 +599,16 @@ html[data-theme] .auth-card .form-field > input { border-color: var(--theme-bord
 html[data-theme] .auth-switch,
 html[data-theme] .auth-forgot { color: var(--theme-accent); }
 html[data-theme="dark"] .auth-config { background: #433529; color: #f0c699; }
+
+@media (max-width: 620px) {
+  .asset-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .asset-stat { padding: 13px 10px; gap: 8px; }
+  .asset-stat:first-child { grid-column: 1 / -1; }
+  .asset-stat strong { font-size: 15px; }
+  .asset-panel { padding: 16px 13px 4px; }
+  .asset-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px; }
+  .asset-row-icon { width: 32px; height: 32px; }
+  .asset-kind-label { display: none; }
+  .asset-row-amount { font-size: 10px; }
+  .asset-row-actions { grid-column: 2 / -1; justify-self: end; margin-top: -5px; }
+}

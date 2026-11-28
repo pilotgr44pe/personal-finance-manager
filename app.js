@@ -5,7 +5,7 @@ const RECEIPT_DB_NAME = "moneta-receipts";
 const RECEIPT_STORE_NAME = "receipts";
 const RECEIPT_BUCKET = "receipts";
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
-const DEFAULT_STATE = { transactions: [], recurring: [], currency: "USD", theme: "light" };
+const DEFAULT_STATE = { transactions: [], recurring: [], assets: [], currency: "USD", theme: "light" };
 const CATEGORIES = {
   expense: ["Food & dining", "Transport", "Shopping", "Health", "Entertainment", "Home", "Personal", "Other"],
   bill: ["Housing", "Utilities", "Internet & phone", "Insurance", "Other"],
@@ -13,6 +13,10 @@ const CATEGORIES = {
   income: ["Salary", "Freelance", "Investment", "Gift", "Other"],
 };
 const TYPE_LABELS = { expense: "Expense", bill: "Bill payment", subscription: "Subscription", income: "Income" };
+const ASSET_CATEGORIES = {
+  savings: ["General savings", "Emergency fund", "High-yield savings", "Other"],
+  investment: ["Stocks & ETFs", "Retirement", "Bonds", "Real estate", "Crypto", "Other"],
+};
 const CATEGORY_COLORS = ["#4d866b", "#ed967e", "#8ca4cb", "#e8c879", "#b4c7b9", "#a893bf", "#7bb5bb", "#d0a592"];
 const TYPE_ICONS = { expense: "↘", bill: "⌂", subscription: "◷", income: "↗" };
 const THEMES = ["light", "dark", "ocean", "lavender", "sunset"];
@@ -27,7 +31,7 @@ const today = new Date();
 const isoDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const currentMonth = () => isoDate(today).slice(0, 7);
 const makeId = () => crypto.randomUUID();
-let state = { ...DEFAULT_STATE, transactions: [], recurring: [] };
+let state = { ...DEFAULT_STATE, transactions: [], recurring: [], assets: [] };
 let supabaseClient;
 let currentUser;
 let activeUserId;
@@ -39,6 +43,7 @@ let deleteTarget = null;
 let toastTimer;
 let legacyReceiptDbPromise;
 let receiptObjectUrl;
+let editingAssetId = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -250,6 +255,18 @@ function recurringToRow(item) {
   };
 }
 
+function assetToRow(item) {
+  return {
+    user_id: currentUser.id,
+    id: item.id,
+    name: item.name,
+    kind: item.kind,
+    category: item.category,
+    institution: item.institution || "",
+    amount: item.amount,
+  };
+}
+
 function transactionFromRow(row) {
   return {
     id: row.id,
@@ -282,6 +299,17 @@ function recurringFromRow(row) {
   };
 }
 
+function assetFromRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    kind: row.kind,
+    category: row.category,
+    institution: row.institution || "",
+    amount: Number(row.amount),
+  };
+}
+
 async function saveTransaction(item) {
   const { error } = await supabaseClient.from("transactions").upsert(transactionToRow(item), { onConflict: "user_id,id" });
   if (error) throw error;
@@ -289,6 +317,14 @@ async function saveTransaction(item) {
 
 async function saveRecurring(item) {
   const { error } = await supabaseClient.from("recurring_payments").upsert(recurringToRow(item), { onConflict: "user_id,id" });
+  if (error) throw error;
+}
+
+async function saveAsset(item) {
+  if (!supabaseClient || !currentUser) {
+    throw new Error("To save this account, open Moneta through a configured Vercel deployment (or `vercel dev`) and sign in first.");
+  }
+  const { error } = await supabaseClient.from("savings_assets").upsert(assetToRow(item), { onConflict: "user_id,id" });
   if (error) throw error;
 }
 
@@ -362,9 +398,10 @@ async function fetchAllRows(table, orderColumn, ascending) {
 }
 
 async function loadAccount(user, generation) {
-  const [transactionRows, recurringRows, { data: settings, error: settingsError }] = await Promise.all([
+  const [transactionRows, recurringRows, assetRows, { data: settings, error: settingsError }] = await Promise.all([
     fetchAllRows("transactions", "date", false),
     fetchAllRows("recurring_payments", "next_due", true),
+    fetchAllRows("savings_assets", "name", true),
     supabaseClient.from("user_settings").select("currency,theme,legacy_imported").eq("user_id", user.id).maybeSingle(),
   ]);
   if (settingsError) throw settingsError;
@@ -381,6 +418,7 @@ async function loadAccount(user, generation) {
   state = {
     transactions: transactionRows.map(transactionFromRow),
     recurring: recurringRows.map(recurringFromRow),
+    assets: assetRows.map(assetFromRow),
     currency: /^[A-Z]{3}$/.test(preferences.currency) ? preferences.currency : "USD",
     theme: THEMES.includes(preferences.theme) ? preferences.theme : "light",
   };
@@ -545,9 +583,10 @@ async function removeReceiptPaths(paths) {
   if (error) throw error;
 }
 
-async function persistImportedData(transactions, recurring, preferences, uploadedPaths = [], markLegacyImported = false) {
+async function persistImportedData(transactions, recurring, preferences, uploadedPaths = [], markLegacyImported = false, assets = []) {
   let insertedTransactions = false;
   let insertedRecurring = false;
+  let insertedAssets = false;
   try {
     if (transactions.length) {
       const { error } = await supabaseClient.from("transactions").insert(transactions.map(transactionToRow));
@@ -559,9 +598,18 @@ async function persistImportedData(transactions, recurring, preferences, uploade
       if (error) throw error;
       insertedRecurring = true;
     }
+    if (assets.length) {
+      const { error } = await supabaseClient.from("savings_assets").insert(assets.map(assetToRow));
+      if (error) throw error;
+      insertedAssets = true;
+    }
     await saveSettings(preferences.currency, preferences.theme, legacyImportCompleted || markLegacyImported);
   } catch (error) {
     const cleanupErrors = [];
+    if (insertedAssets) {
+      const { error: cleanupError } = await supabaseClient.from("savings_assets").delete().in("id", assets.map((item) => item.id));
+      if (cleanupError) cleanupErrors.push(cleanupError);
+    }
     if (insertedRecurring) {
       const { error: cleanupError } = await supabaseClient.from("recurring_payments").delete().in("id", recurring.map((item) => item.id));
       if (cleanupError) cleanupErrors.push(cleanupError);
@@ -585,6 +633,7 @@ async function persistImportedData(transactions, recurring, preferences, uploade
   }
   state.transactions.push(...transactions);
   state.recurring.push(...recurring);
+  state.assets.push(...assets);
   state.currency = preferences.currency;
   state.theme = preferences.theme;
   legacyImportCompleted ||= markLegacyImported;
@@ -612,12 +661,33 @@ function dataUrlToFile(dataUrl, name) {
 async function importBackup(file) {
   if (file.size > 100 * 1024 * 1024) throw new Error("Backup files must be 100 MB or smaller.");
   const backup = JSON.parse(await file.text());
-  if (!backup || !["moneta-backup-v1", "moneta-backup-v2"].includes(backup.format)
+  if (!backup || !["moneta-backup-v1", "moneta-backup-v2", "moneta-backup-v3"].includes(backup.format)
       || !Array.isArray(backup.transactions) || !Array.isArray(backup.recurring)) {
     throw new Error("Choose a valid Moneta JSON backup.");
   }
+  if (backup.assets !== undefined && !Array.isArray(backup.assets)) {
+    throw new Error("The backup contains invalid savings or investment account data.");
+  }
   const ids = new Map(backup.transactions.map((item) => [item.id, makeId()]));
   const recurringIds = new Map(backup.recurring.map((item) => [item.id, makeId()]));
+  const assets = [];
+  for (const item of backup.assets || []) {
+    const name = String(item.name || "").trim();
+    const amount = Number(item.amount);
+    if (!name || name.length > 70 || !["savings", "investment"].includes(item.kind)
+        || !ASSET_CATEGORIES[item.kind].includes(item.category) || !Number.isFinite(amount) || amount < 0
+        || String(item.institution || "").length > 70) {
+      throw new Error("The backup contains a savings or investment account with invalid or missing details.");
+    }
+    assets.push({
+      id: makeId(),
+      name,
+      kind: item.kind,
+      category: item.category,
+      institution: String(item.institution || ""),
+      amount: Math.round(amount * 100) / 100,
+    });
+  }
   const receiptByTransaction = new Map((Array.isArray(backup.receipts) ? backup.receipts : []).map((receipt) => [receipt.transactionId, receipt]));
   const uploadedPaths = [];
   const transactions = [];
@@ -678,7 +748,7 @@ async function importBackup(file) {
       theme: THEMES.includes(backup.theme) ? backup.theme : state.theme,
     };
     persistStarted = true;
-    await persistImportedData(transactions, recurring, preferences, uploadedPaths);
+    await persistImportedData(transactions, recurring, preferences, uploadedPaths, false, assets);
   } catch (error) {
     if (!persistStarted && uploadedPaths.length) {
       try {
@@ -836,11 +906,35 @@ function renderRecurring() {
   </div>`).join("");
 }
 
+function renderAssets() {
+  const savings = state.assets.filter((item) => item.kind === "savings").reduce((sum, item) => sum + item.amount, 0);
+  const investments = state.assets.filter((item) => item.kind === "investment").reduce((sum, item) => sum + item.amount, 0);
+  $("#asset-summary").innerHTML = `
+    <article class="asset-stat"><span class="asset-stat-icon">◈</span><div><span>Total saved & invested</span><strong>${money(savings + investments)}</strong></div></article>
+    <article class="asset-stat"><span class="asset-stat-icon savings-icon">⌂</span><div><span>Savings</span><strong>${money(savings)}</strong></div></article>
+    <article class="asset-stat"><span class="asset-stat-icon investment-icon">↗</span><div><span>Investments</span><strong>${money(investments)}</strong></div></article>`;
+  const list = $("#asset-list");
+  if (!state.assets.length) {
+    list.innerHTML = `<div class="asset-empty"><span class="asset-empty-icon">◈</span><strong>Start building your picture</strong><span>Add a savings account or investment to track its balance here.</span><button class="button button-dark" type="button" data-add-asset>＋ Add your first account</button></div>`;
+    return;
+  }
+  list.innerHTML = [...state.assets]
+    .sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
+    .map((item) => `<article class="asset-row">
+      <span class="asset-row-icon ${item.kind === "investment" ? "investment-icon" : "savings-icon"}">${item.kind === "investment" ? "↗" : "⌂"}</span>
+      <div class="asset-row-name"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.category)}${item.institution ? ` · ${escapeHtml(item.institution)}` : ""}</span></div>
+      <span class="asset-kind-label ${item.kind}">${item.kind === "investment" ? "Investment" : "Savings"}</span>
+      <strong class="asset-row-amount">${money(item.amount)}</strong>
+      <div class="asset-row-actions"><button type="button" data-edit-asset="${escapeHtml(item.id)}" aria-label="Edit ${escapeHtml(item.name)}">Edit</button><button type="button" data-delete-asset="${escapeHtml(item.id)}" aria-label="Delete ${escapeHtml(item.name)}">×</button></div>
+    </article>`).join("");
+}
+
 function renderAll() {
   renderSummary();
   renderTransactions();
   renderUpcoming();
   renderRecurring();
+  renderAssets();
 }
 
 function openTransactionModal() {
@@ -867,6 +961,69 @@ function openRecurringModal() {
   $("#recurring-error").textContent = "";
   $("#recurring-modal").showModal();
   form.elements.name.focus();
+}
+
+function populateAssetCategories(kind, selectedCategory) {
+  const categories = ASSET_CATEGORIES[kind] || ASSET_CATEGORIES.savings;
+  const select = $("#asset-category");
+  select.innerHTML = categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("");
+  if (categories.includes(selectedCategory)) select.value = selectedCategory;
+}
+
+function openAssetModal(asset = null) {
+  const form = $("#asset-form");
+  form.reset();
+  editingAssetId = asset?.id || null;
+  $("#asset-modal-title").textContent = asset ? "Edit account" : "Add account";
+  $("#asset-submit").textContent = asset ? "Save changes" : "Save account";
+  $("#asset-currency-prefix").textContent = state.currency;
+  $("#asset-error").textContent = "";
+  form.elements.kind.value = asset?.kind || "savings";
+  populateAssetCategories(form.elements.kind.value, asset?.category);
+  form.elements.name.value = asset?.name || "";
+  form.elements.institution.value = asset?.institution || "";
+  form.elements.amount.value = asset ? asset.amount : "";
+  $("#asset-modal").showModal();
+  form.elements.name.focus();
+}
+
+async function saveAssetFromForm(formData) {
+  const name = String(formData.get("name") || "").trim();
+  const kind = String(formData.get("kind") || "");
+  const category = String(formData.get("category") || "");
+  const institution = String(formData.get("institution") || "").trim();
+  const amount = Number(formData.get("amount"));
+  if (!name || name.length > 70 || !ASSET_CATEGORIES[kind]?.includes(category)
+      || institution.length > 70 || !Number.isFinite(amount) || amount < 0) {
+    $("#asset-error").textContent = "Enter a name, valid account type and category, and a balance of zero or more.";
+    return;
+  }
+  const asset = {
+    id: editingAssetId || makeId(),
+    name,
+    kind,
+    category,
+    institution,
+    amount: Math.round(amount * 100) / 100,
+  };
+  await saveAsset(asset);
+  const existingIndex = state.assets.findIndex((item) => item.id === asset.id);
+  if (existingIndex < 0) state.assets.push(asset);
+  else state.assets[existingIndex] = asset;
+  $("#asset-modal").close();
+  renderAssets();
+  showToast(editingAssetId ? "Account updated." : "Account saved.");
+  editingAssetId = null;
+}
+
+async function deleteAsset(id) {
+  const index = state.assets.findIndex((item) => item.id === id);
+  if (index < 0) return;
+  const { error } = await supabaseClient.from("savings_assets").delete().eq("id", id);
+  if (error) throw error;
+  state.assets.splice(index, 1);
+  renderAssets();
+  showToast("Account removed.");
 }
 
 async function addTransaction(formData) {
@@ -984,7 +1141,7 @@ async function exportData() {
     transactions,
     receipts,
     exportedAt: new Date().toISOString(),
-    format: "moneta-backup-v2",
+    format: "moneta-backup-v3",
   }, null, 2);
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
@@ -1003,7 +1160,12 @@ function setSidebarOpen(isOpen) {
 function navigate(view) {
   $$(".view").forEach((section) => section.classList.toggle("active-view", section.id === `${view}-view`));
   $$(".nav-link").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
-  $("#current-page").textContent = view === "overview" ? "Overview" : view === "transactions" ? "Transactions" : "Recurring";
+  $("#current-page").textContent = ({
+    overview: "Overview",
+    transactions: "Transactions",
+    recurring: "Recurring",
+    savings: "Savings & investments",
+  })[view] || "Overview";
   setSidebarOpen(false);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1082,6 +1244,17 @@ function bindEvents() {
   $("#transaction-add-button").addEventListener("click", openTransactionModal);
   $("#recurring-add-button").addEventListener("click", openRecurringModal);
   $("#add-recurring-link").addEventListener("click", openRecurringModal);
+  $("#asset-add-button").addEventListener("click", () => openAssetModal());
+  $("#asset-kind").addEventListener("change", (event) => populateAssetCategories(event.target.value));
+  $("#asset-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const submit = $("#asset-submit");
+    submit.disabled = true;
+    saveAssetFromForm(new FormData(event.currentTarget)).catch((error) => {
+      console.error("Could not save savings or investment account.", error);
+      $("#asset-error").textContent = error.message || "Could not save this account.";
+    }).finally(() => { submit.disabled = false; });
+  });
   $("#export-button").addEventListener("click", async () => {
     const button = $("#export-button");
     button.disabled = true;
@@ -1248,6 +1421,20 @@ function bindEvents() {
     }
   });
   document.addEventListener("click", (event) => {
+    const addAssetButton = event.target.closest("[data-add-asset]");
+    if (addAssetButton) openAssetModal();
+    const editAssetButton = event.target.closest("[data-edit-asset]");
+    if (editAssetButton) {
+      const asset = state.assets.find((item) => item.id === editAssetButton.dataset.editAsset);
+      if (asset) openAssetModal(asset);
+    }
+    const deleteAssetButton = event.target.closest("[data-delete-asset]");
+    if (deleteAssetButton && window.confirm("Remove this savings or investment account?")) {
+      deleteAsset(deleteAssetButton.dataset.deleteAsset).catch((error) => {
+        console.error("Could not remove savings or investment account.", error);
+        showToast(error.message || "Could not remove this account.");
+      });
+    }
     const receiptButton = event.target.closest("[data-view-receipt]");
     if (receiptButton) {
       const entry = state.transactions.find((item) => item.id === receiptButton.dataset.viewReceipt);

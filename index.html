@@ -99,6 +99,7 @@
         <nav class="main-nav" aria-label="Main navigation">
           <button class="nav-link active" data-view="overview"><span class="nav-icon">◫</span>Overview</button>
           <button class="nav-link" data-view="transactions"><span class="nav-icon">⇄</span>Transactions</button>
+          <button class="nav-link" data-view="savings"><span class="nav-icon">◈</span>Savings & investments</button>
           <button class="nav-link" data-view="recurring"><span class="nav-icon">◷</span>Recurring</button>
         </nav>
         <div class="sidebar-bottom">
@@ -250,6 +251,19 @@
           </section>
           <footer class="page-footer"><span>Made for a more mindful relationship with money.</span><span class="local-status"><i></i> Synced to your account</span></footer>
         </section>
+
+        <section class="view" id="savings-view">
+          <div class="page-heading transactions-heading">
+            <div><p class="eyebrow">BUILD YOUR FINANCIAL FUTURE</p><h1>Savings & investments<span class="heading-period">.</span></h1><p class="heading-subtitle">Track the balances you’re setting aside and investing.</p></div>
+            <button class="button button-dark" id="asset-add-button" type="button"><span>＋</span> Add account</button>
+          </div>
+          <div class="asset-summary" id="asset-summary"></div>
+          <section class="panel asset-panel">
+            <div class="panel-heading"><div><h2>Your savings & investments</h2><p>Manually tracked balances across your accounts.</p></div></div>
+            <div class="asset-list" id="asset-list"></div>
+          </section>
+          <footer class="page-footer"><span>Balances are updated when you edit an account.</span><span class="local-status"><i></i> Synced to your account</span></footer>
+        </section>
       </main>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -303,6 +317,21 @@
         </div>
         <div class="modal-error" id="recurring-error" role="alert"></div>
         <div class="modal-actions"><button type="button" class="button button-light" data-close="recurring-modal">Cancel</button><button type="submit" class="button button-dark">Save recurring</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="asset-modal">
+      <form id="asset-form" method="dialog">
+        <div class="modal-heading"><div><p class="eyebrow">YOUR FINANCIAL FUTURE</p><h2 id="asset-modal-title">Add account</h2></div><button type="button" class="modal-close" data-close="asset-modal" aria-label="Close dialog">×</button></div>
+        <div class="form-grid">
+          <label class="form-field full-field"><span>Account or investment name</span><input name="name" required maxlength="70" placeholder="e.g. Emergency fund, Index fund" /></label>
+          <label class="form-field"><span>Type</span><select name="kind" id="asset-kind"><option value="savings">Savings</option><option value="investment">Investment</option></select></label>
+          <label class="form-field"><span>Category</span><select name="category" id="asset-category"></select></label>
+          <label class="form-field full-field"><span>Bank or provider <em>optional</em></span><input name="institution" maxlength="70" placeholder="e.g. Your bank or brokerage" /></label>
+          <label class="form-field full-field"><span>Current balance</span><div class="amount-input"><span id="asset-currency-prefix">USD</span><input name="amount" type="number" min="0" step="0.01" required placeholder="0.00" /></div></label>
+        </div>
+        <div class="modal-error" id="asset-error" role="alert"></div>
+        <div class="modal-actions"><button type="button" class="button button-light" data-close="asset-modal">Cancel</button><button type="submit" class="button button-dark" id="asset-submit">Save account</button></div>
       </form>
     </dialog>
 
